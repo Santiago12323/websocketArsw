@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Websockets Testing Client</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+<hr/>
+<div id="timer"></div>
+<hr/>
+
+<!-- ReactJS & Babel -->
+<script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+<!-- React Component -->
+<script type="text/babel">
+
+    class WSClient extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                error: null,
+                isLoaded: false,
+                msg: ""
+            };
+        }
+
+        componentDidMount() {
+            this.wsocket = new WebSocket("ws://localhost:8081/timer");
+
+            this.wsocket.onopen = () => {
+                console.log("WebSocket OPEN");
+                this.setState({ isLoaded: true });
+            };
+
+            this.wsocket.onmessage = (evt) => this.onMessage(evt);
+            this.wsocket.onerror = (evt) => this.onError(evt);
+
+            this.wsocket.onclose = (evt) => {
+                console.log("WebSocket CLOSED", evt);
+                this.setState({ isLoaded: false });
+            };
+        }
+
+        isSocketOpen() {
+            return this.wsocket && this.wsocket.readyState === WebSocket.OPEN;
+        }
+
+        onMessage(evt) {
+            console.log("In onMessage", evt);
+            this.setState({ isLoaded: true, msg: evt.data });
+        }
+
+        onError(evt) {
+            console.error("WebSocket Error", evt);
+            this.setState({ error: evt });
+        }
+
+        render() {
+            console.log("Rendering...");
+            const { error, isLoaded, msg } = this.state;
+            const socketStatus = this.isSocketOpen() ? "OPEN" : "NOT OPEN";
+
+            if (error) {
+                return <div>Error: WebSocket connection error.</div>;
+            } else if (!isLoaded) {
+                return <div>Loading...<p>WebSocket status: {socketStatus}</p></div>;
+            } else {
+                return (
+                    <div>
+                        <h1>Server Time:</h1>
+                        <p>{msg}</p>
+                        <p>WebSocket status: {socketStatus}</p>
+                    </div>
+                );
+            }
+        }
+    }
+
+    ReactDOM.render(<WSClient />, document.getElementById('timer'));
+
+</script>
+
+</body>
+</html>
